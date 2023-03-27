@@ -1667,10 +1667,16 @@ void compute_import_export(Context<E> &ctx) {
         continue;
 
       // If we are using a symbol in a DSO, we need to import it at runtime.
-      if (sym->file != file && sym->file->is_dso && !sym->is_absolute()) {
-        std::scoped_lock lock(sym->mu);
-        sym->is_imported = true;
-        continue;
+      if (sym->file != file && sym->file->is_dso) {
+        // Skip absolute symbols unless they have a value of 0.
+        // This is a bit of a hack for illumos where symbols with shndx=SHN_ABS
+        // and st_value=0 are special but for our purposes here should be marked
+        // as imported.
+        if (!sym->is_absolute() || sym->value == 0) {
+          std::scoped_lock lock(sym->mu);
+          sym->is_imported = true;
+          continue;
+        }
       }
 
       // If we are creating a DSO, all global symbols are exported by default.
