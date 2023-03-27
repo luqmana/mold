@@ -45,6 +45,18 @@ void-*)
   xbps-install -Sy bash make cmake openssl-devel zlib-devel gcc
   xbps-install -Sy tar diffutils util-linux
   ;;
+helios-*)
+  # pkg(1) uses exit code 4 to indicate no changes needed.
+  # Treat that as success.
+  function pkg {
+    command pkg "$@" || {
+      [ "$?" -eq 4 ] || exit $?
+    }
+  }
+  pkg update
+  pkg install developer/build-essential ooce/developer/cmake
+  pkg install library/security/openssl library/zlib
+  ;;
 *)
   echo "Error: don't know anything about build dependencies on $ID-$VERSION_ID"
   exit 1
